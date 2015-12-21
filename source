@@ -1,0 +1,623 @@
+/*This is a code for a battleship game*/
+
+#include <iostream>
+#include <ctime>	//for truly random time
+#include <cstdlib>	//for random number generator
+using namespace std;
+
+enum ShipType { Frigate, Tender, Destroyer, Cruiser, Carrier };
+
+char grid[15][15];	//create layout grid
+
+void InitializeGrid();	//initialize every value in grid to '*'
+void Print();	//final print
+
+void GenRanNum();	//generator for random numbers
+bool DetermineOrientation(); //determine if ship's size will increase horizontally or vertically
+
+/***********************************************************************
+							Build Checker
+***********************************************************************/
+bool CheckIncHor(int);		//check to see if inc y will overlap
+bool CheckDecHor(int);		//check to see if dec y will overlap
+bool CheckIncVert(int);		//check to see if inc x will overlap
+bool CheckDecVert(int);		
+
+
+/***********************************************************************
+							Finalized Build
+***********************************************************************/
+void IncreaesHor(int, int);	//build ship by increasing y(col) value
+void DecreaseHor(int, int); //build ship by decreasing y(col) value
+void IncreaseVert(int, int);	//build ship by changing x(row) value
+void DecreaseVert(int, int);	//build ship by decreasing x(row) value
+
+bool DuplicateTest();	//test for overlapping ship
+char ChangeSizeToChar(int);	//using the size to determine the ship #
+
+/***********************************************************************
+							Starting Game
+***********************************************************************/
+char preGameGrid[15][15];
+void SaveGrid();
+void PrintSaveGrid();	//print original map
+char colA; //input value for column coordinate
+int CharToNum(char);	//change the alphabet input from user to #
+void TestForShip();		//see if the cannon hit a ship
+void ShipIsDestroyed();	//see if ship has been destroy
+bool AllShipDestroyed();	//see if all ships has been destroy
+void PrintEndGame();	//ending game message
+
+/***********************************************************************
+			Counting number of time ship has been hit
+***********************************************************************/
+
+int frigateCount = 0;
+int tenderCount = 0;
+int destroyerCount = 0;
+int cruiserCount = 0;
+int carrierCount = 0;
+	
+int x = 0;	//coordinate use to test if the ship will overlap
+int y = 0;
+int o = 0;	//use to determine the orientation of the ship
+int a = 0;	//to save the x value for when we know ship will not overlap
+int b = 0;	//to save the y value
+
+int main()
+{
+	srand(time(0));	//for truly random number
+	InitializeGrid();	//initialize every char to '*'
+
+	int size = 4; //the first ship we build is 4 unit long
+	bool isHorizontal = true;	//initilize test value to true
+	
+	/*********************************************************
+				Carrier: 4-Location Ship Building
+	*********************************************************/
+
+	GenRanNum();	//generate random # for x, y, and o
+	isHorizontal = DetermineOrientation();	//test for orientation using 'o' value, return true for even #
+ 	if (isHorizontal)	//if true, build it horizontally
+	{
+		if (b <= 2)
+			IncreaesHor(size, Carrier);
+		else
+			DecreaseHor(size, Carrier);
+	}	
+	else    //otherwise build it vertically 
+	{
+		if (a >= 12)
+			DecreaseVert(size, Carrier);
+		else
+			IncreaseVert(size, Carrier);
+	}
+
+	/*********************************************************
+				Cruiser: 3-Location Ship Building
+	*********************************************************/
+	bool isDuplicate = true;
+	bool cannotExtend = true;
+	size = 3;
+	
+	while (isDuplicate || cannotExtend)
+	{
+		GenRanNum();
+		isDuplicate = DuplicateTest();	//check for duplication
+		isHorizontal = DetermineOrientation();
+		if (isHorizontal)	//if true, check it horizontally
+		{
+			if (y <= 2)
+				cannotExtend = CheckIncHor(size);
+			else
+				cannotExtend = CheckDecHor(size);
+		}
+		else    //otherwise check it vertically 
+		{
+			if (x >= 12)
+				cannotExtend = CheckDecVert(size); 
+			else
+				cannotExtend = CheckIncVert(size);
+		}
+
+	}
+
+	if (isHorizontal)	//if true, build it horizontally
+	{
+		if (b <= 2)
+			IncreaesHor(size, Cruiser);
+		else
+			DecreaseHor(size, Cruiser);
+	}
+	else    //otherwise build it vertically 
+	{
+		if (a >= 12)
+			DecreaseVert(size, Cruiser);
+		else
+			IncreaseVert(size, Cruiser);
+	}
+
+	/*********************************************************
+			Destroyer: 3-Location Ship Building
+	*********************************************************/
+	isDuplicate = true;
+	cannotExtend = true;
+	size = 3;
+
+	while (isDuplicate || cannotExtend)
+	{
+		GenRanNum();
+		isDuplicate = DuplicateTest();	//check for duplication
+		isHorizontal = DetermineOrientation();
+		if (isHorizontal)	//if true, check it horizontally
+		{
+			if (y <= 2)
+				cannotExtend = CheckIncHor(size);
+			else
+				cannotExtend = CheckDecHor(size);
+		}
+		else    //otherwise check it vertically 
+		{
+			if (x >= 12)
+				cannotExtend = CheckDecVert(size);
+			else
+				cannotExtend = CheckIncVert(size); 
+		}
+
+	}
+
+	if (isHorizontal)	//if true, build it horizontally
+	{
+		if (b <= 2)
+			IncreaesHor(size, Destroyer);
+		else
+			DecreaseHor(size, Destroyer);
+	}
+	else    //otherwise build it vertically 
+	{
+		if (a >= 12)
+			DecreaseVert(size, Destroyer);
+		else
+			IncreaseVert(size, Destroyer);
+	}
+
+	/*********************************************************
+			Tender: 2-Location Ship Building
+	*********************************************************/
+	isDuplicate = true;
+	cannotExtend = true;
+	size = 2;
+
+	while (isDuplicate || cannotExtend)
+	{
+		GenRanNum();
+		isDuplicate = DuplicateTest();	//check for duplication
+		isHorizontal = DetermineOrientation();
+		if (isHorizontal)	//if true, check it horizontally
+		{
+			if (y <= 2)
+				cannotExtend = CheckIncHor(size);
+			else
+				cannotExtend = CheckDecHor(size);
+		}
+		else    //otherwise check it vertically 
+		{
+			if (x >= 12)
+				cannotExtend = CheckDecVert(size); 
+			else
+				cannotExtend = CheckIncVert(size);
+		}
+
+	}
+
+	if (isHorizontal)	//if true, build it horizontally
+	{
+		if (b <= 2)
+			IncreaesHor(size, Tender);
+		else
+			DecreaseHor(size, Tender);
+	}
+	else    //otherwise build it vertically 
+	{
+		if (a >= 12)
+			DecreaseVert(size, Tender);
+		else
+			IncreaseVert(size, Tender);
+	}
+
+	/*********************************************************
+				Frigate: 2-Location Ship Building
+	*********************************************************/
+	isDuplicate = true;
+	cannotExtend = true;
+	size = 2;
+
+	while (isDuplicate || cannotExtend)
+	{
+		GenRanNum();
+		isDuplicate = DuplicateTest();	//check for duplication
+		isHorizontal = DetermineOrientation();
+		if (isHorizontal)	//if true, check it horizontally
+		{
+			if (y <= 2)
+				cannotExtend = CheckIncHor(size);
+			else
+				cannotExtend = CheckDecHor(size);
+		}
+		else    //otherwise check it vertically 
+		{
+			if (x >= 12)
+				cannotExtend = CheckDecVert(size); 
+			else
+				cannotExtend = CheckIncVert(size);
+		}
+
+	}
+
+	if (isHorizontal)	//if true, build it horizontally
+	{
+		if (b <= 2)
+			IncreaesHor(size, Frigate);
+		else
+			DecreaseHor(size, Frigate);
+	}
+	else    //otherwise build it vertically 
+	{
+		if (a >= 12)
+			DecreaseVert(size, Frigate);
+		else
+			IncreaseVert(size, Frigate);
+	}
+
+	/**********************************************************
+	***********************************************************
+						Game Started	
+	***********************************************************
+	***********************************************************/
+	SaveGrid();	//save the grid before changing it, show this when the player
+				//did won the game
+
+	//input prompt
+
+	cout << "This is a battleship game. Your objective is to sink 5 battleships "
+		<< "of different size by shooting a cannon. You can aim by inputting a "
+		<< "value of 1-15 for the row coordinate and A-O for the columns coordinate. "
+		<< "You have 60 chances, good luck!" << endl;
+	
+	int loopCount = 1;
+	while (loopCount <= 60)
+	{
+		cout << "Enter your coordinate, 1-15 for row and A-O for column." << endl;
+		cout << "Make sure to use space to seperate the two." << endl;
+		cout << "Incorrect input will result in a miss automatically." << endl;
+		cin >> x >> colA; //colA stands for column alphabet
+
+		x = x - 1;	//the real value is one less bc index start with 0
+		y = CharToNum(colA);	//convert char to num for col coordinate
+
+		TestForShip();
+		ShipIsDestroyed();
+		bool allShipDestroyed = false;
+		allShipDestroyed = AllShipDestroyed();
+		if (allShipDestroyed)
+		{
+			cout << "Congratulation, you have won!" << endl;
+			cout << "Here's where all the ships located!" << endl;
+			PrintEndGame();
+			PrintSaveGrid();
+			return 1;
+		}
+		loopCount++;
+	}
+
+	cout << "You lost!" << endl;
+	cout << "Number five(5) represent a spot where you hit the ship." << endl;
+	PrintEndGame();
+	Print();	
+
+}
+
+void PrintSaveGrid()
+{
+	for (int row = 0; row < 15; row++)
+	{
+		for (int col = 0; col < 15; col++)
+			cout << preGameGrid[row][col] << "  ";
+		cout << endl;
+	}
+}
+
+void PrintEndGame()
+{
+	cout << "Number four(4) represent ship Carrier." << endl;
+	cout << "Number four(3) represent ship Cruiser." << endl;
+	cout << "Number four(2) represent ship Destroyer." << endl;
+	cout << "Number four(1) represent ship Tender." << endl;
+	cout << "Number four(0) represent ship Frigate." << endl;
+}
+
+bool AllShipDestroyed()
+{
+	if (frigateCount == 3 && tenderCount == 3 && destroyerCount == 4 && cruiserCount == 4 && carrierCount == 5)
+		return true;
+	else
+		return false;
+}
+
+void ShipIsDestroyed()
+{
+	if (frigateCount == 2)
+	{
+		cout << "You have sunked Frigate!" << endl;
+		frigateCount++;	//increase so it doesn't equal the next turn
+	}
+	else if (tenderCount == 2)
+	{
+		cout << "You have sunked Tender!" << endl;
+		tenderCount++;
+	}
+	else if (destroyerCount == 3)
+	{
+		cout << "You have sunked Destroyer!" << endl;
+		destroyerCount++;
+	}
+	else if (cruiserCount == 3)
+	{
+		cout << "You have sunked Cruiser!" << endl;
+		cruiserCount++;
+	}
+	else if (carrierCount == 4)
+	{
+		cout << "You have sunked Carrier!" << endl;
+		carrierCount++;
+	}
+}
+
+void TestForShip()
+{
+	if (grid[x][y] == '0')	//count everytime a ship is hit
+	{
+		cout << "You have hit Frigate!" << endl;
+		frigateCount++;
+		grid[x][y] = '5';	//change it to 5 to indicate the hit spot
+	}
+	else if (grid[x][y] == '1')
+	{
+		cout << "You have hit Tender!" << endl;
+		tenderCount++;
+		grid[x][y] = '5';
+	}
+	else if (grid[x][y] == '2')	
+	{
+		cout << "You have hit Destroyer!" << endl;
+		destroyerCount++;
+		grid[x][y] = '5';
+	}
+	else if (grid[x][y] == '3')
+	{
+		cout << "You have hit Cruiser!" << endl;
+		cruiserCount++;
+		grid[x][y] = '5';
+	}
+	else if (grid[x][y] == '4')
+	{
+		cout << "You have hit Carrier!" << endl;
+		carrierCount++;
+		grid[x][y] = '5';
+	}
+	else
+	{
+		cout << "It's a miss!" << endl;
+		grid[x][y] = grid[x][y];
+	}
+}
+
+int CharToNum(char colA)
+{
+	switch (colA)
+	{
+	case 'A': return 0;
+	case 'B': return 1;
+	case 'C': return 2;
+	case 'D': return 3;
+	case 'E': return 4;
+	case 'F': return 5;
+	case 'G': return 6;
+	case 'H': return 7;
+	case 'I': return 8;
+	case 'J': return 9;
+	case 'K': return 10;
+	case 'L': return 11;
+	case 'M': return 12;
+	case 'N': return 13;
+	case 'O': return 14;
+	}
+}
+
+void SaveGrid()
+{
+	for (int row = 0; row < 15; row++)
+		for (int col = 0; col < 15; col++)
+			preGameGrid[row][col] = grid[row][col];
+}
+
+bool CheckDecVert(int size)
+{
+	int currentSize = 1;
+	while (currentSize <= size+1)
+	{
+		if (grid[x][y] == '4' || grid[x][y] == '3' || grid[x][y] == '2' || grid[x][y] == '1' || grid[x][y] == '0')
+			return true;
+		else
+		{
+			currentSize++;
+			x--;
+		}
+	}
+
+	return false;
+}
+
+bool CheckIncVert(int size)
+{
+	int currentSize = 1;
+	while (currentSize <= size+1)
+	{
+		if (grid[x][y] == '4' || grid[x][y] == '3' || grid[x][y] == '2' || grid[x][y] == '1' || grid[x][y] == '0')
+			return true;
+		else
+		{
+			currentSize++;
+			x++;
+		}
+	}
+
+	return false;
+}
+
+bool CheckDecHor(int size)
+{
+	int currentSize = 1;
+	while (currentSize <= size+1)
+	{
+		if (grid[x][y] == '4' || grid[x][y] == '3' || grid[x][y] == '2' || grid[x][y] == '1' || grid[x][y] == '0')
+			return true;
+		else
+		{
+			currentSize++;
+			y--;
+		}
+	}
+
+	return false;
+}
+
+bool CheckIncHor(int size)
+{
+	int currentSize = 1;
+	while (currentSize <= size+1)
+	{
+		if (grid[x][y] == '4' || grid[x][y] == '3' || grid[x][y] == '2' || grid[x][y] == '1' || grid[x][y] == '0')
+			return true;
+		else
+		{
+			currentSize++;
+			y++;
+		}
+	}
+
+	return false;
+}
+
+bool DuplicateTest()
+{
+	if (grid[x][y] == '4' || grid[x][y] == '3' || grid[x][y] == '2' || grid[x][y] == '1' || grid[x][y] == '0')
+		return true;
+	else
+		return false;
+}
+
+char ChangeSizeToChar(int ShipType)
+{
+	switch (ShipType)
+	{
+	case 4: return '4';
+	case 3: return '3';
+	case 2: return '2';
+	case 1: return '1';
+	case 0: return '0';
+	} 
+	return 'a';
+}
+
+void IncreaseVert(int size, int ShipType)
+{
+	int currentSize = 1;
+	char ship = 'a';
+	ship = ChangeSizeToChar(ShipType);
+
+	while (currentSize <= size)
+	{
+		grid[a][b] = ship;
+		a++;
+		currentSize++;
+	}
+}
+
+void DecreaseVert(int size, int ShipType)
+{
+	int currentSize = 1;
+	char ship = 'a';
+	ship = ChangeSizeToChar(ShipType);
+
+	while (currentSize <= size)
+	{
+		grid[a][b] = ship;
+		a--;
+		currentSize++;
+	}
+}
+
+void DecreaseHor(int size, int ShipType)
+{
+	int currentSize = 1;
+	char ship = 'a';
+	ship = ChangeSizeToChar(ShipType);
+
+	while (currentSize <= size)
+	{
+		grid[a][b] = ship;
+		b--;
+		currentSize++;
+	}
+}
+
+void IncreaesHor(int size, int ShipType)
+{
+	int currentSize = 1;
+	char ship = 'a';
+	ship = ChangeSizeToChar(ShipType);
+
+	while (currentSize <= size)
+	{
+		grid[a][b] = ship;
+		b++;
+		currentSize++;
+	}
+}
+
+bool DetermineOrientation()
+{
+	if (o % 2 == 0)
+		return true;
+	else
+		return false;
+}
+
+void GenRanNum()
+{
+	x = rand() % 14;
+	y = rand() % 14;
+	o = rand();
+	a = x;
+	b = y;
+}
+
+void Print()
+{
+	for (int row = 0; row < 15; row++)
+	{
+		for (int col = 0; col < 15; col++)
+			cout << grid[row][col] << "  ";
+		cout << endl;
+	}
+}
+
+void InitializeGrid()
+{
+	for (int row = 0; row < 15; row++)
+		for (int col = 0; col < 15; col++)
+		{
+			grid[row][col] = '*';
+		}
+}
